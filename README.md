@@ -1,8 +1,13 @@
 # Hedgehog AI Hedge Fund
 
+![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![OpenRouter](https://img.shields.io/badge/API-OpenRouter-orange.svg)
+![Status: Development](https://img.shields.io/badge/Status-Development-green.svg)
+
 An AI-powered hedge fund analysis platform that uses charts and personas to analyze the 200 biggest companies on US markets and generate a list of potential investment long/short opportunities.
 
-## Overview
+## 📊 Overview
 
 Hedgehog uses a graph-based workflow powered by Pydantic AI with agent functions and OpenRouter to simulate a complete investment analysis process. The system employs multiple specialized agents, each focusing on different aspects of company analysis:
 
@@ -17,12 +22,12 @@ Hedgehog uses a graph-based workflow powered by Pydantic AI with agent functions
 
 The analysis workflow is orchestrated through Pydantic AI's Graph feature, which creates a directed graph of analysis steps, automatically handling the flow of data between agents.
 
-## Installation
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Python 3.12+
-- uv (modern Python package installer)
+- [uv](https://github.com/astral-sh/uv) (modern Python package installer)
 
 ### Setup
 
@@ -48,7 +53,7 @@ LOGFIRE_TOKEN=your_logfire_token
 STAGE=dev
 """
 
-## Usage
+## 🖥️ Usage
 
 ### Analyzing Stocks
 
@@ -78,9 +83,9 @@ Optional parameters:
 - `--rebalance`: Rebalance frequency in days (default: 30)
 - `--no-stop-loss`: Disable stop-loss for positions
 
-## Project Structure
+## 📂 Project Structure
 
-```
+"""
 hedgehog/
 ├── agents/                   # Specialized analysis agents
 │   ├── bill_ackman.py        # Bill Ackman investment agent
@@ -98,9 +103,9 @@ hedgehog/
 ├── logfire_setup.py          # Logging configuration
 ├── main.py                   # CLI entry point
 └── predict.py                # Basic prediction module
-```
+"""
 
-## Technical Architecture
+## 🏗️ Technical Architecture
 
 ### Pydantic AI Graph Workflow
 
@@ -129,14 +134,32 @@ Models are accessed through OpenRouter, allowing flexibility to use different LL
 2. Anthropic models (e.g., Claude 3)
 3. Other providers supported by OpenRouter
 
-## Disclaimer
+## 📈 Features
+
+- **Multi-Agent Analysis**: Employs specialized agents for comprehensive investment analysis
+- **Graph-Based Workflow**: Orchestrates complex analysis processes efficiently
+- **Backtesting**: Test investment strategies against historical data
+- **Model Flexibility**: Switch between different LLM providers via OpenRouter
+- **Strongly-Typed**: Uses Pydantic models throughout for robust data handling
+
+## ⚠️ Disclaimer
 
 This project is for educational and research purposes only and is not intended for real trading. The AI-generated investment recommendations should not be considered financial advice. Always consult with a qualified financial advisor before making investment decisions.
 
-## License
+## 📄 License
 
 MIT
 
-## Credits
+## 👏 Credits
 
 Inspired by [virattt/ai-hedge-fund](https://github.com/virattt/ai-hedge-fund)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
