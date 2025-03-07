@@ -1,0 +1,26 @@
+[project]
+name = "hedgehog"
+version = "0.1.0"
+description = "AI Hedge Fund using Pydantic AI with Graph and OpenRouter"
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "aiohttp>=3.11.13",
+    "logfire>=3.7.1",
+    "pydantic-ai>=0.0.35",
+    "pydantic-graph>=0.0.17",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "pydantic>=2.5.2",
+    "typing-extensions>=4.9.0",
+    "numpy>=1.26.0",
+    "scipy>=1.12.0",
+    "httpx>=0.28.1",
+    "logfire-api>=3.7.1",
+    "typing-inspection>=0.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.2.0",
+    "pytest>=7.4.0",
+]
