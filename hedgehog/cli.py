@@ -1,6 +1,6 @@
 """CLI utilities for interactive selection of options."""
 
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List
 import sys
 import termios
 import tty

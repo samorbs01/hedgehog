@@ -47,7 +47,7 @@ uv pip install -e .
 3. Set up environment variables by creating a `.env` file with your API keys:
 """
 OPENROUTER_API_KEY=your_openrouter_api_key
-FINDATA_API_KEY=your_financial_data_api_key
+FINANCIAL_DATASETS_API_KEY=your_financial_data_api_key
 CHART_IMG_API_KEY=your_chart_image_api_key
 LOGFIRE_TOKEN=your_logfire_token
 STAGE=dev

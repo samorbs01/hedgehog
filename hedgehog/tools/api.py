@@ -2,16 +2,14 @@
 
 import os
 import aiohttp
-import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # API Keys
-FINDATA_API_KEY = os.getenv("FINDATA_API_KEY")
-CHART_IMG_API_KEY = os.getenv("CHART_IMG_API_KEY")
+FINANCIAL_DATASETS_API_KEY = os.getenv("FINANCIAL_DATASETS_API_KEY")
 
 
 async def fetch_company_data(ticker: str) -> Dict[str, Any]:
@@ -26,14 +24,14 @@ async def fetch_company_data(ticker: str) -> Dict[str, Any]:
 
     async with aiohttp.ClientSession() as session:
         # Basic company info
-        company_url = f"https://financialdatasets.ai/api/v1/companies/{ticker}?apikey={FINDATA_API_KEY}"
+        company_url = f"https://financialdatasets.ai/api/v1/companies/{ticker}?apikey={FINANCIAL_DATASETS_API_KEY}"
         async with session.get(company_url) as response:
             if response.status != 200:
                 raise Exception(f"Failed to fetch company data for {ticker}: {response.status}")
             company_data = await response.json()
 
         # Financial statements
-        financials_url = f"https://financialdatasets.ai/api/v1/financials/{ticker}?apikey={FINDATA_API_KEY}"
+        financials_url = f"https://financialdatasets.ai/api/v1/financials/{ticker}?apikey={FINANCIAL_DATASETS_API_KEY}"
         async with session.get(financials_url) as response:
             if response.status != 200:
                 raise Exception(f"Failed to fetch financial data for {ticker}: {response.status}")
@@ -60,7 +58,7 @@ async def fetch_price_history(ticker: str, period: str = "1y") -> Dict[str, Any]
     """
 
     async with aiohttp.ClientSession() as session:
-        price_url = f"https://financialdatasets.ai/api/v1/prices/{ticker}?period={period}&apikey={FINDATA_API_KEY}"
+        price_url = f"https://financialdatasets.ai/api/v1/prices/{ticker}?period={period}&apikey={FINANCIAL_DATASETS_API_KEY}"
         async with session.get(price_url) as response:
             if response.status != 200:
                 raise Exception(f"Failed to fetch price history for {ticker}: {response.status}")
@@ -83,7 +81,7 @@ async def fetch_news_data(ticker: str, limit: int = 20) -> List[Dict[str, Any]]:
     # news APIs here.
 
     async with aiohttp.ClientSession() as session:
-        news_url = f"https://financialdatasets.ai/api/v1/news/{ticker}?limit={limit}&apikey={FINDATA_API_KEY}"
+        news_url = f"https://financialdatasets.ai/api/v1/news/{ticker}?limit={limit}&apikey={FINANCIAL_DATASETS_API_KEY}"
         async with session.get(news_url) as response:
             if response.status != 200:
                 raise Exception(f"Failed to fetch news for {ticker}: {response.status}")
@@ -103,27 +101,10 @@ async def fetch_peer_companies(ticker: str) -> List[str]:
     """
 
     async with aiohttp.ClientSession() as session:
-        peers_url = f"https://financialdatasets.ai/api/v1/peers/{ticker}?apikey={FINDATA_API_KEY}"
+        peers_url = f"https://financialdatasets.ai/api/v1/peers/{ticker}?apikey={FINANCIAL_DATASETS_API_KEY}"
         async with session.get(peers_url) as response:
             if response.status != 200:
                 raise Exception(f"Failed to fetch peer companies for {ticker}: {response.status}")
             peer_data = await response.json()
 
         return peer_data.get("peers", [])
-
-
-async def generate_chart_image(ticker: str, chart_type: str = "candlestick", period: str = "1y") -> str:
-    """Generate a chart image URL for a given ticker.
-
-    Args:
-        ticker: Stock ticker symbol
-        chart_type: Type of chart (e.g., 'candlestick', 'line')
-        period: Time period for the chart (e.g., '1d', '1m', '1y')
-
-    Returns:
-        URL to the generated chart image
-    """
-
-    chart_url = f"https://api.chart-img.com/v1/charts/stock?symbol={ticker}&key={CHART_IMG_API_KEY}&type={chart_type}&period={period}"
-
-    return chart_url

@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from pydantic_ai import Schema, agent, model
+from pydantic_ai import agent
 
 
 class DCFAssumptions(BaseModel):

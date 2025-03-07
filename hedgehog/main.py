@@ -3,14 +3,14 @@
 import os
 import asyncio
 import argparse
-from typing import List, Optional
+from typing import List
 from datetime import datetime
 from dotenv import load_dotenv
 
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from hedgehog.workflow import analyze_company, CompanyAnalysisOutput
+from hedgehog.workflow import analyze_company
 from hedgehog.backtester import run_backtest, BacktestParameters
 from hedgehog.display import display_analyses
 from hedgehog.cli import select_analysts, select_model
@@ -101,7 +101,7 @@ async def run_historical_backtest(
         rebalance_frequency: Rebalance frequency in days
         stop_loss_enabled: Whether to use stop-loss for positions
     """
-    print(f"🦔 Hedgehog AI Hedge Fund - Backtester 🦔")
+    print("🦔 Hedgehog AI Hedge Fund - Backtester 🦔")
     print(f"Running backtest for {len(tickers)} stocks from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
     print("-" * 80)
 

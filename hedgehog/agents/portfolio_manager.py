@@ -3,7 +3,7 @@
 from typing import List, Dict, Any, Optional
 from enum import Enum
 from pydantic import BaseModel, Field
-from pydantic_ai import Schema, agent, model
+from pydantic_ai import agent
 
 
 class OrderType(str, Enum):

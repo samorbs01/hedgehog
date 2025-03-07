@@ -2,13 +2,13 @@
 
 import asyncio
 import os
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from hedgehog.workflow import analyze_company, CompanyAnalysisOutput, InvestmentDecision
+from hedgehog.workflow import analyze_company
 from hedgehog.tools.api import fetch_price_history
 
 
@@ -64,7 +64,6 @@ class BacktestPortfolio(BaseModel):
             }
 
         import numpy as np
-        from scipy import stats
 
         returns = np.array(self.daily_returns)
         total_return = (self.equity / self.cash) - 1.0

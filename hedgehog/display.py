@@ -1,6 +1,6 @@
 """Display utilities for the Hedgehog AI Hedge Fund."""
 
-from typing import List, Dict, Any
+from typing import List
 import os
 from hedgehog.workflow import CompanyAnalysisOutput
 

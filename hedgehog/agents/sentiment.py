@@ -1,9 +1,9 @@
 """Sentiment analysis agent for evaluating market sentiment from news and social media."""
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
-from pydantic_ai import Schema, agent, model
+from pydantic_ai import agent
 
 
 class NewsItem(BaseModel):

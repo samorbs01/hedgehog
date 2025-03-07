@@ -3,9 +3,16 @@
 from typing import Dict, Any, List, Optional
 import asyncio
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, agent
+from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from hedgehog.tools.logfire_setup import *
+# Import our API functions
+from hedgehog.tools.api import (
+    fetch_company_data,
+    fetch_price_history,
+    fetch_news_data,
+    fetch_peer_companies,
+)
 
 # Import our progress tracker
 from hedgehog.progress import progress
@@ -51,19 +58,18 @@ class TechnicalIndicators(BaseModel):
 
 
 class TechnicalAnalysis(BaseModel):
-    """Technical analysis of a stock's price action."""
+    """Technical analysis of a stock."""
 
     ticker: str = Field(..., description="Stock ticker symbol")
-    current_price: float = Field(..., description="Current stock price")
-    indicators: TechnicalIndicators = Field(..., description="Technical indicators")
-    support_levels: List[float] = Field(..., description="Identified support price levels")
-    resistance_levels: List[float] = Field(..., description="Identified resistance price levels")
-    patterns: List[str] = Field(..., description="Identified chart patterns")
-    signals: List[str] = Field(..., description="Technical signals identified")
-    rating: int = Field(..., ge=1, le=10, description="Overall technical rating from 1-10")
-    recommendation: str = Field(..., description="Technical recommendation (Buy/Hold/Sell)")
+    indicators: TechnicalIndicators = Field(..., description="Key technical indicators")
+    patterns: List[str] = Field(..., description="Chart patterns identified")
+    signals: List[str] = Field(..., description="Trading signals")
+    rating: int = Field(..., ge=1, le=10, description="Overall rating from 1-10")
+    recommendation: str = Field(..., description="Investment recommendation (Buy/Hold/Sell)")
     reasoning: str = Field(..., description="Reasoning behind recommendation")
     detailed_reasoning: Optional[str] = Field(None, description="Detailed reasoning and analysis")
+    chart_url: Optional[str] = Field(None, description="URL of the chart image")
+    trend: str = Field(..., description="Trend identified (Bullish/Bearish/Neutral)")
 
 
 class SentimentAnalysis(BaseModel):
@@ -172,24 +178,48 @@ async def analyze_fundamentals(agent: Agent, ticker: str, financial_data: Dict[s
     # Call the agent with just the prompt
     result = await agent.run(prompt)
 
-    # Create a FundamentalAnalysis object with default values
+    # Extract financial metrics from the financial_data
+    pe_ratio = financial_data.get("pe_ratio")
+    pb_ratio = financial_data.get("pb_ratio")
+    roe = financial_data.get("return_on_equity")
+    debt_to_equity = financial_data.get("debt_to_equity")
+    revenue_growth = financial_data.get("revenue_growth")
+    profit_margin = financial_data.get("profit_margin")
+    fcf = financial_data.get("free_cash_flow")
+
+    # Parse recommendation from result (simplified example)
+    recommendation = "Hold"  # Default
+    if "buy" in result.data.lower():
+        recommendation = "Buy"
+    elif "sell" in result.data.lower():
+        recommendation = "Sell"
+
+    # Rating (1-10) extraction (simplified)
+    rating = 5  # Default neutral rating
+
+    # Extract company information
+    company_info = await fetch_company_data(ticker)
+    company_name = company_info.get("company_name", f"{ticker} Inc.")
+    sector = company_info.get("sector", "Technology")
+
+    # Create a FundamentalAnalysis object with extracted data
     analysis = FundamentalAnalysis(
         ticker=ticker,
-        company_name=f"{ticker} Inc.",
-        sector="Technology",
+        company_name=company_name,
+        sector=sector,
         metrics=FinancialMetrics(
-            pe_ratio=20.0,
-            pb_ratio=5.0,
-            roe=0.15,
-            debt_to_equity=0.5,
-            revenue_growth=0.1,
-            profit_margin=0.2,
-            free_cash_flow=1000
+            pe_ratio=pe_ratio,
+            pb_ratio=pb_ratio,
+            roe=roe,
+            debt_to_equity=debt_to_equity,
+            revenue_growth=revenue_growth,
+            profit_margin=profit_margin,
+            free_cash_flow=fcf
         ),
         strengths=["Strong market position", "Solid financial performance"],
         weaknesses=["Competitive pressures", "Regulatory challenges"],
-        rating=7,
-        recommendation="Buy",
+        rating=rating,
+        recommendation=recommendation,
         reasoning="Based on fundamental analysis of financial metrics.",
         detailed_reasoning=result.data if show_reasoning else None
     )
@@ -212,34 +242,31 @@ async def analyze_technicals(agent: Agent, ticker: str, price_history: Dict[str,
     Returns:
         TechnicalAnalysis: Results of the technical analysis
     """
-    # Status updates with more variety
+    # Status updates for technical analysis
     status_messages = [
-        "Analyzing price patterns",
+        "Analyzing price trends",
         "Calculating moving averages",
-        "Drawing trend lines",
-        "Computing RSI and MACD",
-        "Identifying support levels",
-        "Spotting resistance zones",
-        "Checking volume indicators",
-        "Analyzing momentum",
-        "Evaluating chart patterns"
+        "Evaluating RSI levels",
+        "Checking MACD signals",
+        "Analyzing Bollinger Bands",
+        "Calculating support levels",
+        "Evaluating resistance levels",
+        "Checking volume patterns",
+        "Finalizing technical score"
     ]
 
     # Show initial status
     progress.update_status("Technical Analyst", ticker, status_messages[0])
 
-    # Generate the analysis
+    # Generate the prompt for analysis
     prompt = f"""
         You are a skilled technical analyst examining {ticker}.
-        Analyze the following price data and provide an investment recommendation:
+        Analyze the following price history data and provide an investment recommendation:
 
-        Price Data:
+        Price History Data:
         {price_history}
 
-        Current Price: {price_history.get('current_price', 0.0)}
-
-        Identify support/resistance levels, chart patterns, and key technical indicators.
-        Be thorough in your analysis and provide a clear BUY, HOLD, or SELL recommendation.
+        Be thorough in your technical analysis and provide a clear BUY, HOLD, or SELL recommendation.
     """
 
     # Show a few status updates to simulate work
@@ -250,26 +277,51 @@ async def analyze_technicals(agent: Agent, ticker: str, price_history: Dict[str,
     # Call the agent with just the prompt
     result = await agent.run(prompt)
 
-    # Create a TechnicalAnalysis object with default values
+    # Extract technical indicators from price history
+    ma_50d = price_history.get("moving_average_50d") or price_history.get("ma_50d")
+    ma_200d = price_history.get("moving_average_200d") or price_history.get("ma_200d")
+    rsi_14 = price_history.get("rsi_14")
+    macd = price_history.get("macd")
+    bollinger_upper = price_history.get("bollinger_upper")
+    bollinger_lower = price_history.get("bollinger_lower")
+    volume_avg = price_history.get("volume_avg_30d") or price_history.get("volume_avg")
+
+    # Parse signals from the result (simplified example)
+    trend = "Neutral"
+    if "uptrend" in result.data.lower() or "bullish" in result.data.lower():
+        trend = "Bullish"
+    elif "downtrend" in result.data.lower() or "bearish" in result.data.lower():
+        trend = "Bearish"
+
+    # Parse recommendation from result (simplified)
+    recommendation = "Hold"  # Default
+    if "buy" in result.data.lower():
+        recommendation = "Buy"
+    elif "sell" in result.data.lower():
+        recommendation = "Sell"
+
+    # Rating (1-10) extraction (simplified)
+    rating = 5  # Default neutral rating
+
+    # Create a TechnicalAnalysis object with extracted data
     analysis = TechnicalAnalysis(
         ticker=ticker,
-        current_price=price_history.get("current_price", 150.0),
         indicators=TechnicalIndicators(
-            moving_average_50d=145.0,
-            moving_average_200d=140.0,
-            rsi_14=55.0,
-            macd=2.0,
-            bollinger_upper=160.0,
-            bollinger_lower=140.0,
-            volume_avg_30d=1000000
+            moving_average_50d=ma_50d,
+            moving_average_200d=ma_200d,
+            rsi_14=rsi_14,
+            macd=macd,
+            bollinger_upper=bollinger_upper,
+            bollinger_lower=bollinger_lower,
+            volume_avg_30d=volume_avg
         ),
-        support_levels=[140.0, 135.0],
-        resistance_levels=[160.0, 165.0],
-        patterns=["Bullish pattern", "Upward trend"],
-        signals=["Buy signal on RSI", "Golden cross forming"],
-        rating=7,
-        recommendation="Buy",
-        reasoning="Based on positive technical indicators and chart patterns.",
+        patterns=["Support at recent lows", "Resistance at recent highs"],
+        chart_url=chart_image_url,
+        trend=trend,
+        signals=["Moving average crossover", "RSI oversold"],
+        rating=rating,
+        recommendation=recommendation,
+        reasoning="Based on technical indicators and chart patterns.",
         detailed_reasoning=result.data if show_reasoning else None
     )
 
@@ -352,190 +404,76 @@ async def analyze_with_investor(
     ticker: str,
     company_data: Dict[str, Any],
     investor_name: str,
-    show_reasoning: bool = False
+    show_reasoning: bool = False,
+    peer_companies: List[str] = None
 ) -> InvestorAnalysis:
     """Analyze a company using a famous investor's principles.
 
     Args:
         agent: Agent to use for the analysis
         ticker: Stock ticker symbol
-        company_data: Company information
+        company_data: Company data
         investor_name: Name of the investor to emulate
         show_reasoning: Whether to include detailed reasoning in the output
+        peer_companies: List of peer companies for comparison
 
     Returns:
-        InvestorAnalysis: Results of the investor-based analysis
+        InvestorAnalysis: Results of the investor-focused analysis
     """
-    # Investor-specific status messages
-    investor_statuses = {
-        "Warren Buffett": [
-            "Reading annual report",
-            "Checking moat strength",
-            "Analyzing management integrity",
-            "Calculating intrinsic value",
-            "Checking margin of safety",
-            "Evaluating competitive advantages",
-            "Generating Buffett analysis"
-        ],
-        "Charlie Munger": [
-            "Applying mental models",
-            "Checking incentive structures",
-            "Analyzing management quality",
-            "Evaluating business quality",
-            "Assessing long-term prospects",
-            "Checking company culture",
-            "Generating Munger analysis"
-        ],
-        "Ben Graham": [
-            "Calculating net-net value",
-            "Checking asset value",
-            "Calculating intrinsic value",
-            "Checking margin of safety",
-            "Analyzing earnings stability",
-            "Checking dividend history",
-            "Generating Graham-style analysis"
-        ],
-        "Bill Ackman": [
-            "Checking business quality",
-            "Evaluating management",
-            "Analyzing capital allocation",
-            "Identifying potential catalysts",
-            "Considering activism strategies",
-            "Assessing strategic options",
-            "Generating Ackman analysis"
-        ],
-        "Cathie Wood": [
-            "Assessing innovation potential",
-            "Analyzing disruption vectors",
-            "Evaluating growth trajectory",
-            "Projecting TAM expansion",
-            "Projecting growth runway",
-            "Assessing technological advantages",
-            "Generating Cathie Wood style analysis"
-        ],
-        "Valuation Analyst": [
-            "Building DCF model",
-            "Running sensitivity analysis",
-            "Calculating WACC",
-            "Projecting future cash flows",
-            "Computing terminal value",
-            "Performing comps analysis",
-            "Finalizing valuation"
-        ]
-    }
+    # Create status messages
+    verbs = ["Thinking", "Analyzing", "Evaluating", "Considering", "Examining"]
+    objects = ["business model", "competitive position", "management team", "financials", "growth prospects"]
 
-    # Get status messages for this investor or use generic ones
-    status_list = investor_statuses.get(investor_name, [
-        "Researching company",
-        "Analyzing financials",
-        "Evaluating management",
-        "Checking competitive position",
-        "Assessing industry dynamics",
-        "Finalizing analysis"
-    ])
+    status_messages = []
+    for verb in verbs:
+        for obj in objects:
+            status_messages.append(f"{verb} {obj}")
 
-    # Show initial status
-    progress.update_status(investor_name, ticker, status_list[0])
+    # Shuffle status messages
+    import random
+    random.shuffle(status_messages)
 
-    # Store principles and focus areas for different investors
-    investor_profiles = {
-        "Warren Buffett": {
-            "principles": [
-                "Invest in businesses you understand",
-                "Look for companies with strong competitive advantages ('moats')",
-                "Focus on companies with consistent earnings growth",
-                "Invest in companies with honest and capable management",
-                "Require a margin of safety in purchase price"
-            ],
-            "focus": "long-term value investing and sustainable competitive advantages"
-        },
-        "Charlie Munger": {
-            "principles": [
-                "Focus on businesses with high-quality management",
-                "Look for companies with sustainable competitive advantages",
-                "Invest within your circle of competence",
-                "Consider the psychological aspects of investment decisions",
-                "Apply mental models from multiple disciplines to investment decisions"
-            ],
-            "focus": "mental models and rational decision-making frameworks"
-        },
-        "Ben Graham": {
-            "principles": [
-                "Focus on the intrinsic value of companies based on assets and earnings",
-                "Require a significant margin of safety",
-                "Analyze financial statements thoroughly",
-                "Look for companies trading below their net current asset value",
-                "Consider the earnings stability and dividend record"
-            ],
-            "focus": "quantitative analysis and margin of safety"
-        },
-        "Bill Ackman": {
-            "principles": [
-                "Invest in simple, high-quality businesses",
-                "Look for predictable businesses with high return on capital",
-                "Focus on companies with strong brand value and pricing power",
-                "Consider the potential for operational improvements",
-                "Take an activist approach when necessary"
-            ],
-            "focus": "concentrated positions in high-quality businesses with improvement potential"
-        },
-        "Cathie Wood": {
-            "principles": [
-                "Focus on disruptive innovation and technological change",
-                "Invest in companies with exponential growth potential",
-                "Consider convergence across technologies and markets",
-                "Look for significant cost declines enabling new markets",
-                "Maintain a 5-year minimum investment horizon"
-            ],
-            "focus": "disruptive innovation and exponential growth opportunities"
-        }
-    }
+    # Update status
+    progress.update_status(investor_name, ticker, status_messages[0])
 
-    # Get the investor's profile or use a generic one
-    profile = investor_profiles.get(investor_name, {
-        "principles": ["Focus on value", "Consider growth prospects", "Evaluate management quality"],
-        "focus": "quality companies at reasonable prices"
-    })
+    # Generate the investor-specific analysis with peer comparison
+    peer_companies_text = ""
+    if peer_companies:
+        peer_companies_text = f"\nPeer Companies: {', '.join(peer_companies)}"
+
+    prompt = f"""
+        You are {investor_name} analyzing {ticker}.
+        Given your investment philosophy and principles, examine this company:
+
+        Company Data:
+        {company_data}
+        {peer_companies_text}
+
+        Provide your detailed analysis and a clear BUY, HOLD, or SELL recommendation.
+    """
 
     # Show a few status updates to simulate work
-    for i in range(1, min(5, len(status_list))):
-        await asyncio.sleep(0.4)  # Slightly longer delay for investors
-        progress.update_status(investor_name, ticker, status_list[i])
-
-    # Generate the analysis
-    prompt = f"""
-        You are {investor_name}, analyzing {ticker} ({company_data.get('company_name', f'{ticker} Inc.')}).
-
-        Your investment principles are:
-        {', '.join(profile['principles'])}
-
-        You focus on {profile['focus']}.
-
-        Company Information:
-        {company_data}
-
-        Based on your investment philosophy, analyze this company and provide a detailed evaluation.
-        Identify key strengths and concerns, and provide a clear BUY, HOLD, or SELL recommendation.
-    """
-
-    # Show final status before generating output
-    if len(status_list) > 5:
-        progress.update_status(investor_name, ticker, status_list[min(5, len(status_list)-1)])
+    for i in range(1, min(3, len(status_messages))):
+        await asyncio.sleep(0.5)  # Slightly longer delay
+        progress.update_status(investor_name, ticker, status_messages[i])
 
     # Call the agent with just the prompt
     result = await agent.run(prompt)
 
-    # Create an InvestorAnalysis object with default values
+    # Create an InvestorAnalysis object
     analysis = InvestorAnalysis(
         ticker=ticker,
-        company_name=company_data.get("company_name", f"{ticker} Inc."),
         investor_name=investor_name,
-        strengths=["Strong competitive position", "Quality management"],
-        concerns=["Valuation concerns", "Market competition"],
-        would_invest=True,
+        investment_principles=[
+            f"{investor_name}'s investment principle 1",
+            f"{investor_name}'s investment principle 2"
+        ],
+        strengths=["Strong market position", "Good management team"],
+        weaknesses=["High valuation", "Competitive threats"],
+        intrinsic_value=None,  # Can be calculated more precisely based on investor
         rating=7,
         recommendation="Buy",
-        reasoning=f"{investor_name} would likely invest based on the company's alignment with their investment philosophy.",
+        reasoning=f"{investor_name} would likely approve of this investment.",
         detailed_reasoning=result.data if show_reasoning else None
     )
 
@@ -757,11 +695,27 @@ async def analyze_company(
     # Start the progress display
     progress.start_display()
 
-    # Placeholder for data fetching (in a real implementation, this would call actual APIs)
-    company_data = {"company_name": f"{ticker} Inc.", "sector": "Technology"}
-    financial_data = {"pe_ratio": 25.0, "revenue_growth": 0.15}
-    price_history = {"current_price": 150.0, "ma_50d": 145.0, "rsi_14": 60.0}
-    news_data = [{"title": f"Positive news about {ticker}", "sentiment": "positive"}]
+    # Fetch real data using our API functions
+    try:
+        # Fetch company data
+        company_data = await fetch_company_data(ticker)
+        # Fetch price history (1 year by default)
+        price_history = await fetch_price_history(ticker)
+        # Fetch news data (20 articles by default)
+        news_data = await fetch_news_data(ticker)
+        # Fetch peer companies for comparison
+        peer_companies = await fetch_peer_companies(ticker)
+    except Exception as e:
+        # If API calls fail, log error and use placeholder data
+        progress.log_error(f"Error fetching data for {ticker}: {str(e)}")
+        # Fallback to placeholder data
+        company_data = {"company_name": f"{ticker} Inc.", "sector": "Technology"}
+        price_history = {"current_price": 150.0, "ma_50d": 145.0, "rsi_14": 60.0}
+        news_data = [{"title": f"Positive news about {ticker}", "sentiment": "positive"}]
+        peer_companies = []
+
+    # Extract financial data from company_data
+    financial_data = company_data.get("financials", {})
 
     # Analyses to track
     analyses = {}
@@ -783,7 +737,9 @@ async def analyze_company(
     investor_analyses = []
     for investor in ["Warren Buffett", "Charlie Munger", "Ben Graham", "Bill Ackman", "Cathie Wood"]:
         if investor in selected_analysts:
-            investor_analysis = await analyze_with_investor(agent, ticker, company_data, investor, show_reasoning)
+            investor_analysis = await analyze_with_investor(
+                agent, ticker, company_data, investor, show_reasoning, peer_companies=peer_companies
+            )
             analyses[f"investor_{investor.lower().replace(' ', '_')}"] = investor_analysis
             investor_analyses.append(investor_analysis)
 
