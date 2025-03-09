@@ -33,7 +33,7 @@ The analysis workflow is orchestrated through Pydantic AI's Graph feature, which
 
 1. Clone the repository:
 """
-git clone https://github.com/yourusername/hedgehog.git
+git clone https://github.com/yourusername/hedgehog.git 
 cd hedgehog
 """
 
