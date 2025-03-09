@@ -40,11 +40,12 @@ cd hedgehog
 2. Create a virtual environment and install dependencies:
 """
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
+# On Windows: .venv\Scripts\activate
 uv pip install -e .
 """
 
-3. Set up environment variables by creating a `.env` file with your API keys:
+4. Set up environment variables by creating a `.env` file with your API keys:
 """
 OPENROUTER_API_KEY=your_openrouter_api_key
 FINANCIAL_DATASETS_API_KEY=your_financial_data_api_key
